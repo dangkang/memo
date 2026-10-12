@@ -1,0 +1,679 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f5f5f2">
+  <title>きょうの持ち物</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #252a25;
+      --muted: #777e76;
+      --paper: #f5f5f2;
+      --card: #fff;
+      --green: #426c54;
+      --green-dark: #31543f;
+      --line: #e8e9e3;
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      font-family: -apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      min-width: 320px;
+      min-height: 100vh;
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    button, input { font: inherit; }
+    button { color: inherit; }
+
+    .app {
+      width: min(100%, 520px);
+      min-height: 100vh;
+      margin: 0 auto;
+      padding: 30px 22px calc(112px + var(--safe-bottom));
+    }
+
+    .topline {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: var(--muted);
+      font-size: 13px;
+      letter-spacing: .04em;
+    }
+
+    .brand { display: flex; align-items: center; gap: 8px; }
+    .brand-mark {
+      display: grid;
+      width: 26px;
+      height: 26px;
+      place-items: center;
+      border-radius: 9px;
+      background: #e3ebe2;
+      color: var(--green);
+      font-size: 15px;
+    }
+
+    .date { font-variant-numeric: tabular-nums; }
+
+    h1 {
+      margin: 30px 0 5px;
+      font-size: clamp(27px, 7vw, 34px);
+      line-height: 1.25;
+      letter-spacing: .02em;
+    }
+
+    .subtitle { margin: 0; color: var(--muted); font-size: 14px; }
+
+    .progress-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin: 26px 0 18px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: var(--card);
+    }
+
+    .progress-copy { min-width: 0; }
+    .progress-title { margin: 0 0 5px; font-size: 15px; font-weight: 700; }
+    .progress-caption { margin: 0; color: var(--muted); font-size: 13px; }
+    .progress-ring {
+      --progress: 0deg;
+      display: grid;
+      width: 54px;
+      height: 54px;
+      flex: 0 0 auto;
+      place-items: center;
+      border-radius: 50%;
+      background: conic-gradient(var(--green) var(--progress), #edf0eb 0);
+    }
+
+    .progress-ring::before {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: var(--card);
+      content: "";
+      grid-area: 1 / 1;
+    }
+
+    .progress-number {
+      z-index: 1;
+      grid-area: 1 / 1;
+      font-size: 12px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .list-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 26px 2px 10px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .items { display: grid; gap: 9px; }
+
+    .item {
+      display: flex;
+      min-height: 62px;
+      align-items: center;
+      gap: 13px;
+      padding: 12px 15px;
+      border: 1px solid var(--line);
+      border-radius: 15px;
+      background: var(--card);
+      cursor: pointer;
+      text-align: left;
+      transition: opacity .18s ease, transform .18s ease, border-color .18s ease;
+      animation: arrive .22s ease both;
+    }
+
+    .item:active { transform: scale(.985); }
+    .item.done { color: #8a9088; background: #f0f1ed; }
+
+    .check {
+      display: grid;
+      width: 24px;
+      height: 24px;
+      flex: 0 0 auto;
+      place-items: center;
+      border: 1.5px solid #c9cec7;
+      border-radius: 8px;
+      color: transparent;
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .done .check { border-color: var(--green); background: var(--green); color: white; }
+    .item-label { flex: 1; font-size: 15px; font-weight: 600; }
+    .done .item-label { text-decoration: line-through; text-decoration-color: #aeb4aa; }
+    .move-hint { color: #a0a69e; font-size: 12px; }
+
+    .empty {
+      padding: 25px 18px;
+      border: 1px dashed #d9ddd5;
+      border-radius: 15px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.7;
+      text-align: center;
+    }
+
+    .ready {
+      margin: 18px 0;
+      padding: 18px;
+      border-radius: 16px;
+      background: #e6eee6;
+      color: var(--green-dark);
+      font-size: 17px;
+      font-weight: 700;
+      text-align: center;
+      animation: arrive .25s ease both;
+    }
+
+    .ready span { display: block; margin-top: 4px; font-size: 13px; font-weight: 500; }
+
+    .bottom-bar {
+      position: fixed;
+      z-index: 2;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      padding: 12px 22px calc(12px + var(--safe-bottom));
+      border-top: 1px solid rgba(226, 228, 222, .9);
+      background: rgba(245, 245, 242, .94);
+      -webkit-backdrop-filter: blur(14px);
+      backdrop-filter: blur(14px);
+    }
+
+    .bottom-actions {
+      display: flex;
+      width: min(100%, 476px);
+      gap: 10px;
+      margin: 0 auto;
+    }
+
+    .action {
+      min-height: 54px;
+      flex: 1;
+      border: 0;
+      border-radius: 16px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .action.primary { background: var(--green); color: #fff; }
+    .action.primary:active { background: var(--green-dark); }
+    .action.secondary { flex: 0 0 112px; border: 1px solid var(--line); background: var(--card); }
+
+    .overlay {
+      position: fixed;
+      z-index: 5;
+      inset: 0;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      background: rgba(29, 35, 30, .38);
+    }
+
+    .overlay[hidden] { display: none; }
+
+    .sheet {
+      width: min(100%, 560px);
+      max-height: min(88vh, 760px);
+      overflow: auto;
+      padding: 12px 22px calc(18px + var(--safe-bottom));
+      border-radius: 24px 24px 0 0;
+      background: var(--paper);
+      animation: rise .22s ease both;
+    }
+
+    .sheet-handle { width: 38px; height: 4px; margin: 0 auto 18px; border-radius: 9px; background: #d5d9d2; }
+    .sheet-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 15px; }
+    .sheet h2 { margin: 0; font-size: 21px; }
+    .sheet-intro { margin: 5px 0 18px; color: var(--muted); font-size: 13px; line-height: 1.6; }
+
+    .icon-button {
+      display: grid;
+      width: 38px;
+      height: 38px;
+      flex: 0 0 auto;
+      place-items: center;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--card);
+      font-size: 20px;
+      cursor: pointer;
+    }
+
+    .day-tabs { display: flex; gap: 7px; overflow-x: auto; padding: 2px 0 12px; scrollbar-width: none; }
+    .day-tabs::-webkit-scrollbar { display: none; }
+
+    .day-tab {
+      min-width: 42px;
+      height: 39px;
+      flex: 1;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--card);
+      color: var(--muted);
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .day-tab[aria-selected="true"] { border-color: var(--green); background: #e6eee6; color: var(--green-dark); font-weight: 700; }
+    .editor-list { display: grid; gap: 8px; margin: 2px 0 12px; }
+
+    .editor-row {
+      display: flex;
+      min-height: 50px;
+      align-items: center;
+      gap: 9px;
+      padding: 5px 6px 5px 12px;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      background: var(--card);
+    }
+
+    .editor-row input {
+      width: 100%;
+      min-width: 0;
+      border: 0;
+      outline: 0;
+      background: transparent;
+      color: var(--ink);
+      font-size: 14px;
+    }
+
+    .editor-row input:focus-visible { box-shadow: 0 2px 0 var(--green); }
+    .remove-button { width: 38px; height: 38px; border: 0; border-radius: 10px; background: transparent; color: #92988f; font-size: 20px; cursor: pointer; }
+    .add-button { width: 100%; min-height: 48px; border: 1px dashed #cbd1c8; border-radius: 13px; background: transparent; color: var(--green-dark); font-size: 14px; font-weight: 700; cursor: pointer; }
+    .sheet-footer { display: flex; gap: 9px; margin-top: 18px; }
+    .sheet-footer .action { min-height: 50px; }
+    .sheet-footer .action.secondary { flex: 1; }
+
+    .notice {
+      position: fixed;
+      z-index: 10;
+      right: 18px;
+      bottom: calc(92px + var(--safe-bottom));
+      left: 18px;
+      width: fit-content;
+      max-width: min(440px, calc(100% - 36px));
+      margin: 0 auto;
+      padding: 11px 15px;
+      border-radius: 12px;
+      background: #313831;
+      color: white;
+      font-size: 13px;
+      box-shadow: 0 6px 20px #20262026;
+    }
+
+    .notice[hidden] { display: none; }
+    button:focus-visible, .item:focus-visible { outline: 3px solid #91b59a; outline-offset: 2px; }
+
+    @keyframes arrive { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes rise { from { transform: translateY(20px); opacity: .7; } to { transform: translateY(0); opacity: 1; } }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <div class="topline">
+      <div class="brand"><span class="brand-mark" aria-hidden="true">✓</span><span>まいにちの準備</span></div>
+      <time class="date" id="date-label"></time>
+    </div>
+
+    <h1 id="page-title">きょうの持ち物</h1>
+    <p class="subtitle" id="subtitle">忘れ物がないか、ひとつずつ確認しましょう。</p>
+
+    <section class="progress-card" aria-label="準備の進み具合">
+      <div class="progress-copy">
+        <p class="progress-title" id="progress-title">準備をはじめましょう</p>
+        <p class="progress-caption" id="progress-caption">持ち物をタップしてチェック</p>
+      </div>
+      <div class="progress-ring" id="progress-ring" role="img" aria-label="0パーセント">
+        <span class="progress-number" id="progress-number">0%</span>
+      </div>
+    </section>
+
+    <div id="checklist" aria-live="polite"></div>
+  </main>
+
+  <nav class="bottom-bar" aria-label="操作">
+    <div class="bottom-actions">
+      <button class="action primary" id="edit-open" type="button">曜日ごとの持ち物を編集</button>
+      <button class="action secondary" id="reset-checks" type="button">リセット</button>
+    </div>
+  </nav>
+
+  <div class="overlay" id="editor-overlay" hidden>
+    <section class="sheet" role="dialog" aria-modal="true" aria-labelledby="editor-title">
+      <div class="sheet-handle" aria-hidden="true"></div>
+      <div class="sheet-header">
+        <div>
+          <h2 id="editor-title">持ち物を編集</h2>
+          <p class="sheet-intro">曜日を選んで、持ち物を追加・変更できます。変更はこの端末に保存されます。</p>
+        </div>
+        <button class="icon-button" id="edit-close" type="button" aria-label="編集を閉じる">×</button>
+      </div>
+      <div class="day-tabs" id="day-tabs" role="tablist" aria-label="曜日"></div>
+      <div class="editor-list" id="editor-list"></div>
+      <button class="add-button" id="add-item" type="button">＋ 持ち物を追加</button>
+      <div class="sheet-footer">
+        <button class="action secondary" id="edit-cancel" type="button">閉じる</button>
+        <button class="action primary" id="edit-done" type="button">保存して戻る</button>
+      </div>
+    </section>
+  </div>
+  <div class="notice" id="notice" role="status" aria-live="polite" hidden></div>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const DAYS = ["日", "月", "火", "水", "木", "金", "土"];
+      const LIST_KEY = "weekday-checklist-lists-v1";
+      const CHECK_KEY = "weekday-checklist-checks-v1";
+      const DEFAULTS = [
+        ["お財布", "スマートフォン", "ハンカチ", "ティッシュ"],
+        ["通学バッグ", "連絡帳", "筆箱", "水筒", "ハンカチ"],
+        ["通学バッグ", "宿題", "筆箱", "水筒", "ハンカチ"],
+        ["通学バッグ", "体操着", "筆箱", "水筒", "ハンカチ"],
+        ["通学バッグ", "連絡帳", "筆箱", "水筒", "ハンカチ"],
+        ["通学バッグ", "上履き", "筆箱", "水筒", "ハンカチ"],
+        ["お財布", "スマートフォン", "ハンカチ"]
+      ];
+
+      const $ = (selector) => document.querySelector(selector);
+      const safeDateKey = (date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
+        return `${year}-${month}-${day}`;
+      };
+
+      let lists = loadLists();
+      let checks = loadChecks();
+      let todayKey = safeDateKey(new Date());
+      let editorDay = new Date().getDay();
+      let noticeTimer;
+
+      function showNotice(message) {
+        const notice = $("#notice");
+        notice.textContent = message;
+        notice.hidden = false;
+        clearTimeout(noticeTimer);
+        noticeTimer = setTimeout(() => { notice.hidden = true; }, 2800);
+      }
+
+      function loadLists() {
+        try {
+          const saved = localStorage.getItem(LIST_KEY);
+          if (!saved) return DEFAULTS.map((items) => [...items]);
+          const parsed = JSON.parse(saved);
+          if (!Array.isArray(parsed) || parsed.length !== 7 || parsed.some((day) => !Array.isArray(day))) {
+            throw new Error("保存データの形式が正しくありません");
+          }
+          return parsed.map((day) => day.filter((item) => typeof item === "string").map((item) => item.trim()).filter(Boolean));
+        } catch (error) {
+          showNotice("保存した持ち物を読み込めませんでした。初期リストを表示します。");
+          return DEFAULTS.map((items) => [...items]);
+        }
+      }
+
+      function loadChecks() {
+        try {
+          const saved = localStorage.getItem(CHECK_KEY);
+          if (!saved) return { date: safeDateKey(new Date()), items: [] };
+          const parsed = JSON.parse(saved);
+          if (!parsed || typeof parsed.date !== "string" || !Array.isArray(parsed.items)) {
+            throw new Error("チェックデータの形式が正しくありません");
+          }
+          return parsed.date === safeDateKey(new Date())
+            ? { date: parsed.date, items: parsed.items.filter((item) => typeof item === "string") }
+            : { date: safeDateKey(new Date()), items: [] };
+        } catch (error) {
+          showNotice("チェック状態を読み込めませんでした。チェックをリセットします。");
+          return { date: safeDateKey(new Date()), items: [] };
+        }
+      }
+
+      function save(key, value) {
+        try {
+          localStorage.setItem(key, JSON.stringify(value));
+          return true;
+        } catch (error) {
+          showNotice("端末に保存できませんでした。空き容量やブラウザー設定をご確認ください。");
+          return false;
+        }
+      }
+
+      function refreshDate() {
+        const now = new Date();
+        const nextKey = safeDateKey(now);
+        if (nextKey !== todayKey) {
+          todayKey = nextKey;
+          checks = { date: todayKey, items: [] };
+          save(CHECK_KEY, checks);
+        }
+        render();
+      }
+
+      function render() {
+        const now = new Date();
+        const day = now.getDay();
+        const items = lists[day];
+        const checked = new Set(checks.date === todayKey ? checks.items : []);
+        const checkedCount = items.filter((item) => checked.has(item)).length;
+        const complete = items.length > 0 && checkedCount === items.length;
+        const percent = items.length ? Math.round((checkedCount / items.length) * 100) : 0;
+
+        $("#date-label").dateTime = todayKey;
+        $("#date-label").textContent = `${now.getMonth() + 1}月${now.getDate()}日（${DAYS[day]}）`;
+        $("#page-title").textContent = `きょうは${DAYS[day]}曜日`;
+        $("#progress-title").textContent = complete ? "準備完了！" : items.length ? "準備の進み具合" : "持ち物がありません";
+        $("#progress-caption").textContent = items.length ? `${checkedCount} / ${items.length} 個チェック済み` : "編集ボタンから持ち物を追加できます";
+        $("#progress-number").textContent = `${percent}%`;
+        $("#progress-ring").style.setProperty("--progress", `${percent * 3.6}deg`);
+        $("#progress-ring").setAttribute("aria-label", `準備 ${percent}パーセント`);
+
+        const root = $("#checklist");
+        root.replaceChildren();
+        if (!items.length) {
+          const empty = document.createElement("div");
+          empty.className = "empty";
+          empty.textContent = "この曜日の持ち物はまだ登録されていません。下のボタンから追加できます。";
+          root.append(empty);
+          return;
+        }
+
+        const remaining = items.filter((item) => !checked.has(item));
+        const finished = items.filter((item) => checked.has(item));
+        if (remaining.length) root.append(makeGroup("これから", remaining, checked));
+        if (complete) {
+          const ready = document.createElement("div");
+          ready.className = "ready";
+          ready.textContent = "準備完了！";
+          const note = document.createElement("span");
+          note.textContent = "忘れ物なし。いってらっしゃい！";
+          ready.append(note);
+          root.append(ready);
+        }
+        if (finished.length) root.append(makeGroup("チェック済み", finished, checked));
+      }
+
+      function makeGroup(title, items, checked) {
+        const section = document.createElement("section");
+        const heading = document.createElement("div");
+        heading.className = "list-heading";
+        heading.textContent = title;
+        const count = document.createElement("span");
+        count.textContent = `${items.length}個`;
+        heading.append(count);
+        const list = document.createElement("div");
+        list.className = "items";
+
+        items.forEach((item, index) => {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = `item${checked.has(item) ? " done" : ""}`;
+          button.setAttribute("aria-pressed", String(checked.has(item)));
+          button.style.animationDelay = `${index * 25}ms`;
+
+          const mark = document.createElement("span");
+          mark.className = "check";
+          mark.setAttribute("aria-hidden", "true");
+          mark.textContent = "✓";
+          const label = document.createElement("span");
+          label.className = "item-label";
+          label.textContent = item;
+          const hint = document.createElement("span");
+          hint.className = "move-hint";
+          hint.textContent = checked.has(item) ? "完了" : "タップ";
+          button.append(mark, label, hint);
+          button.addEventListener("click", () => toggleItem(item));
+          list.append(button);
+        });
+
+        section.append(heading, list);
+        return section;
+      }
+
+      function toggleItem(item) {
+        const current = new Set(checks.date === todayKey ? checks.items : []);
+        if (current.has(item)) current.delete(item);
+        else current.add(item);
+        checks = { date: todayKey, items: [...current] };
+        save(CHECK_KEY, checks);
+        render();
+      }
+
+      function resetChecks() {
+        checks = { date: todayKey, items: [] };
+        save(CHECK_KEY, checks);
+        render();
+        showNotice("チェックをすべて外しました。");
+      }
+
+      function saveLists() {
+        lists = lists.map((day) => day.map((item) => item.trim()).filter(Boolean));
+        const validItems = new Set(lists[new Date().getDay()]);
+        checks = { date: todayKey, items: checks.items.filter((item) => validItems.has(item)) };
+        save(LIST_KEY, lists);
+        save(CHECK_KEY, checks);
+        render();
+      }
+
+      function renderEditor() {
+        const tabs = $("#day-tabs");
+        tabs.replaceChildren();
+        DAYS.forEach((day, index) => {
+          const tab = document.createElement("button");
+          tab.type = "button";
+          tab.className = "day-tab";
+          tab.setAttribute("role", "tab");
+          tab.setAttribute("aria-selected", String(editorDay === index));
+          tab.textContent = `${day}曜`;
+          tab.addEventListener("click", () => {
+            collectEditorInputs();
+            editorDay = index;
+            renderEditor();
+          });
+          tabs.append(tab);
+        });
+
+        const list = $("#editor-list");
+        list.replaceChildren();
+        lists[editorDay].forEach((item, index) => {
+          const row = document.createElement("div");
+          row.className = "editor-row";
+          const input = document.createElement("input");
+          input.type = "text";
+          input.maxLength = 40;
+          input.value = item;
+          input.setAttribute("aria-label", `${DAYS[editorDay]}曜日の持ち物 ${index + 1}`);
+          input.addEventListener("input", () => { lists[editorDay][index] = input.value; });
+          const remove = document.createElement("button");
+          remove.type = "button";
+          remove.className = "remove-button";
+          remove.textContent = "×";
+          remove.setAttribute("aria-label", `${item || "この項目"}を削除`);
+          remove.addEventListener("click", () => {
+            collectEditorInputs();
+            lists[editorDay].splice(index, 1);
+            renderEditor();
+          });
+          row.append(input, remove);
+          list.append(row);
+        });
+      }
+
+      function collectEditorInputs() {
+        lists[editorDay] = [...$("#editor-list").querySelectorAll("input")]
+          .map((input) => input.value.trim())
+          .filter(Boolean);
+      }
+
+      function closeEditor(saveChanges) {
+        if (saveChanges) {
+          collectEditorInputs();
+          saveLists();
+        }
+        $("#editor-overlay").hidden = true;
+        $("#edit-open").focus();
+      }
+
+      $("#edit-open").addEventListener("click", () => {
+        editorDay = new Date().getDay();
+        renderEditor();
+        $("#editor-overlay").hidden = false;
+        $("#day-tabs button[aria-selected='true']").focus();
+      });
+      $("#edit-close").addEventListener("click", () => closeEditor(true));
+      $("#edit-cancel").addEventListener("click", () => closeEditor(true));
+      $("#edit-done").addEventListener("click", () => closeEditor(true));
+      $("#reset-checks").addEventListener("click", resetChecks);
+      $("#add-item").addEventListener("click", () => {
+        collectEditorInputs();
+        lists[editorDay].push("");
+        renderEditor();
+        const inputs = $("#editor-list").querySelectorAll("input");
+        inputs[inputs.length - 1].focus();
+      });
+      $("#editor-overlay").addEventListener("click", (event) => {
+        if (event.target === $("#editor-overlay")) closeEditor(true);
+      });
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && !$("#editor-overlay").hidden) closeEditor(true);
+      });
+      document.addEventListener("visibilitychange", () => {
+        if (!document.hidden) refreshDate();
+      });
+
+      render();
+      window.setInterval(() => {
+        if (safeDateKey(new Date()) !== todayKey) refreshDate();
+      }, 30000);
+    })();
+  </script>
+</body>
+</html>
